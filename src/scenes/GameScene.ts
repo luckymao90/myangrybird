@@ -90,6 +90,18 @@ export class GameScene extends Phaser.Scene {
 
     // 碰撞伤害
     this.matter.world.on('collisionstart', this.onCollision, this);
+    // 碰撞对分离时唤醒仍在休眠的一侧：支撑物被撞飞/滑走后，上方休眠刚体才会塌落
+    this.matter.world.on(
+      'collisionend',
+      (event: Phaser.Physics.Matter.Events.CollisionEndEvent) => {
+        for (const pair of event.pairs) {
+          const a = pair.bodyA as MatterJS.BodyType;
+          const b = pair.bodyB as MatterJS.BodyType;
+          if (a.isSleeping && !b.isSleeping && !b.isStatic) wakeBody(a);
+          else if (b.isSleeping && !a.isSleeping && !a.isStatic) wakeBody(b);
+        }
+      }
+    );
 
     // 输入
     this.input.on('pointerdown', (p: Phaser.Input.Pointer) => {
@@ -306,6 +318,13 @@ export class GameScene extends Phaser.Scene {
     else this.destroyBlock(target);
   }
 
+  /** 移除刚体不会唤醒靠它支撑的休眠刚体（Matter 无此机制），摧毁后手动全体唤醒让上方结构塌落 */
+  private wakeAllStructures(): void {
+    for (const t of [...this.blocks, ...this.pigs]) {
+      wakeBody(t.body as MatterJS.BodyType | null);
+    }
+  }
+
   private killPig(pig: Pig): void {
     this.pigs = this.pigs.filter((p) => p !== pig);
     sfx.pigPop();
@@ -320,6 +339,7 @@ export class GameScene extends Phaser.Scene {
       .setDepth(20)
       .explode(14, pig.x, pig.y);
     pig.destroy();
+    this.wakeAllStructures();
     this.checkWin();
   }
 
@@ -338,6 +358,7 @@ export class GameScene extends Phaser.Scene {
       .setDepth(20)
       .explode(10, block.x, block.y);
     block.destroy();
+    this.wakeAllStructures();
   }
 
   private explode(x: number, y: number): void {

@@ -53,6 +53,11 @@ export function makeTextButton(
     Phaser.Geom.Rectangle.Contains
   );
 
+  const restore = () => {
+    draw(fill);
+    container.setScale(1);
+  };
+  // 在 pointerdown 直接触发：真机触屏上 pointerup 可能因手指微滑/pointercancel 丢失
   container.on(
     'pointerdown',
     (
@@ -64,17 +69,11 @@ export function makeTextButton(
       event.stopPropagation();
       draw(fillDown);
       container.setScale(0.96);
+      sfx.click();
+      onClick();
     }
   );
-  const restore = () => {
-    draw(fill);
-    container.setScale(1);
-  };
-  container.on('pointerup', () => {
-    restore();
-    sfx.click();
-    onClick();
-  });
+  container.on('pointerup', restore);
   container.on('pointerout', restore);
 
   return container;
