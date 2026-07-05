@@ -1,13 +1,20 @@
 // 模拟真实手机流程：竖屏打开 -> 旋转为横屏 -> 点"开始游戏"
-// 用法: node scripts/check-rotate.mjs [url]
-import { webkit, devices } from 'playwright';
+// 用法: node scripts/check-rotate.mjs [url] [webkit|chromium]
+// 注：WebKit 内核不走系统代理，访问外网可能失败；线上验证用 chromium
+import { webkit, chromium, devices } from 'playwright';
 import { mkdirSync } from 'node:fs';
 
 mkdirSync('shots', { recursive: true });
 const url = process.argv[2] ?? 'https://luckymao90.github.io/myangrybird/';
+const engine = process.argv[3] ?? 'webkit';
 
-const browser = await webkit.launch({ headless: true });
-const ctx = await browser.newContext({ ...devices['iPhone 13'] }); // 竖屏
+const browser =
+  engine === 'chromium'
+    ? await chromium.launch({ channel: 'msedge', headless: true })
+    : await webkit.launch({ headless: true });
+const ctx = await browser.newContext({
+  ...devices[engine === 'chromium' ? 'Pixel 7' : 'iPhone 13'], // 竖屏
+});
 const page = await ctx.newPage();
 const errors = [];
 page.on('console', (m) => {
