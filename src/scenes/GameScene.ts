@@ -10,6 +10,8 @@ import {
   IMPACT_DMG_SCALE,
   MAX_EFFECTIVE_MASS,
   MIN_IMPACT,
+  PIG_FALL_DMG_MULT,
+  PIG_FALL_MIN_IMPACT,
   SCORE_BLOCK,
   SCORE_PIG,
   SCORE_SPARE_BIRD,
@@ -292,7 +294,8 @@ export class GameScene extends Phaser.Scene {
       const a = pair.bodyA as MatterJS.BodyType;
       const b = pair.bodyB as MatterJS.BodyType;
       const impact = Math.hypot(a.velocity.x - b.velocity.x, a.velocity.y - b.velocity.y);
-      if (impact <= MIN_IMPACT) continue;
+      // 用各类目标中最低的起伤阈值做粗筛，具体阈值在 damageFrom 里按目标类型结算
+      if (impact <= PIG_FALL_MIN_IMPACT) continue;
       if (impact > 7.5) sfx.thud(impact / 14);
       this.damageFrom(a, b, impact);
       this.damageFrom(b, a, impact);
@@ -305,7 +308,11 @@ export class GameScene extends Phaser.Scene {
     if (!(go instanceof Pig) && !(go instanceof Block)) return;
     const srcMass = source.isStatic ? 6 : Math.min(source.mass, MAX_EFFECTIVE_MASS);
     const birdBonus = (source as { gameObject?: unknown }).gameObject instanceof Bird ? 1.35 : 1;
-    const dmg = (impact - MIN_IMPACT) * srcMass * IMPACT_DMG_SCALE * birdBonus;
+    // 猪皮薄：摔在地面等静态体上用更低阈值+额外倍率（从一个箱子的高度摔落即致死）
+    const pigFall = go instanceof Pig && source.isStatic;
+    const minImpact = pigFall ? PIG_FALL_MIN_IMPACT : MIN_IMPACT;
+    const mult = pigFall ? PIG_FALL_DMG_MULT : 1;
+    const dmg = (impact - minImpact) * srcMass * IMPACT_DMG_SCALE * birdBonus * mult;
     if (dmg <= 0) return;
     this.applyDamage(go, dmg);
   }

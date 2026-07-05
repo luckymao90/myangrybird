@@ -85,7 +85,7 @@ export class LevelSelectScene extends Phaser.Scene {
           .setScale(0.5);
       }
       const zone = this.add
-        .zone(x, y, w, h)
+        .zone(x, y, w + 36, h + 36)
         .setInteractive({ useHandCursor: true });
       zone.on('pointerdown', () => {
         sfx.click();

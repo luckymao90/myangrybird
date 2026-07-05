@@ -23,16 +23,36 @@ const before = await page.evaluate(() => {
   return {
     pigY: pig?.y,
     pigSleeping: pig?.body?.isSleeping,
+    pigCount: g.pigs.length,
     blockCount: g.blocks.length,
   };
 });
 console.log('before:', JSON.stringify(before));
+
+// 记录猪参与的碰撞冲击值，用于伤害调参
+await page.evaluate(() => {
+  window.__impacts = [];
+  const g = window.__game;
+  g.matter.world.on('collisionstart', (ev) => {
+    for (const pair of ev.pairs) {
+      const a = pair.bodyA;
+      const b = pair.bodyB;
+      if (a.label === 'pig' || b.label === 'pig') {
+        const impact = Math.hypot(a.velocity.x - b.velocity.x, a.velocity.y - b.velocity.y);
+        window.__impacts.push({ pair: `${a.label}|${b.label}`, impact: +impact.toFixed(2) });
+      }
+    }
+  });
+});
 
 await page.evaluate(() => {
   const g = window.__game;
   g.destroyBlock(g.blocks[0]); // 直接摧毁支撑箱
 });
 await page.waitForTimeout(1500);
+
+const impacts = await page.evaluate(() => window.__impacts);
+console.log('猪的碰撞记录:', JSON.stringify(impacts));
 
 const after = await page.evaluate(() => {
   const g = window.__game;
@@ -41,9 +61,14 @@ const after = await page.evaluate(() => {
 });
 console.log('after :', JSON.stringify(after));
 
-const fell = after.pigY !== undefined && after.pigY - before.pigY > 30;
+// v1.2 起：猪从箱子高度摔到地面应直接摔死（PIG_STATIC_DMG_MULT）
+const died = after.pigCount === before.pigCount - 1;
 console.log(before.pigSleeping ? '猪摧毁前处于休眠 ✓' : '注意：摧毁前猪未休眠（测试可能不充分）');
-console.log(fell ? `PASS: 猪从 ${before.pigY?.toFixed(0)} 掉到 ${after.pigY?.toFixed(0)}` : `FAIL: 猪没有掉落 (${before.pigY} -> ${after.pigY})`);
+console.log(
+  died
+    ? `PASS: 猪塌落并摔死 (${before.pigCount} -> ${after.pigCount})`
+    : `FAIL: 猪未摔死 (pigY ${before.pigY?.toFixed(0)} -> ${after.pigY?.toFixed(0)}, count ${before.pigCount} -> ${after.pigCount})`
+);
 if (errors.length) console.log('pageerrors:\n' + errors.join('\n'));
 await browser.close();
-process.exit(fell ? 0 : 1);
+process.exit(died ? 0 : 1);

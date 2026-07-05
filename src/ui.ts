@@ -48,8 +48,10 @@ export function makeTextButton(
 
   const container = scene.add.container(x, y, [g, txt]);
   container.setSize(w, h);
+  // 判定区四周外扩，容忍触屏误差
+  const pad = 18;
   container.setInteractive(
-    new Phaser.Geom.Rectangle(-w / 2, -h / 2, w, h),
+    new Phaser.Geom.Rectangle(-w / 2 - pad, -h / 2 - pad, w + pad * 2, h + pad * 2),
     Phaser.Geom.Rectangle.Contains
   );
 

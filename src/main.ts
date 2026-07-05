@@ -40,13 +40,21 @@ game.events.once(Phaser.Core.Events.READY, () => {
   const w = window as unknown as { __gameBooted?: boolean; __hideBootWarn?: () => void };
   w.__gameBooted = true;
   w.__hideBootWarn?.();
-  console.log('怒鸟出击 v1.1 已启动');
+  console.log('怒鸟出击 v1.2 已启动');
 });
 
 // 手机转屏/浏览器工具栏收起后布局会变，延迟刷新 Scale 以校正画布尺寸与输入坐标
 const refreshScale = () => {
+  game.scale.refresh();
   setTimeout(() => game.scale.refresh(), 120);
   setTimeout(() => game.scale.refresh(), 500);
 };
 window.addEventListener('orientationchange', refreshScale);
 window.addEventListener('resize', refreshScale);
+// 地址栏收起/页面缩放只更新 visualViewport，不一定触发 window resize
+window.visualViewport?.addEventListener('resize', refreshScale);
+window.visualViewport?.addEventListener('scroll', refreshScale);
+// 兜底：每次按下前（捕获阶段先于 Phaser 处理）刷新画布边界，杜绝触点坐标错位
+const syncBounds = () => game.scale.refresh();
+window.addEventListener('pointerdown', syncBounds, true);
+window.addEventListener('touchstart', syncBounds, { capture: true, passive: true });

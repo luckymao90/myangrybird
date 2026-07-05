@@ -23,6 +23,8 @@ export const LAUNCH_POWER = 0.175; // 拉距 -> 初速度 的系数
 export const MIN_IMPACT = 5; // 低于该相对速度的碰撞不产生伤害
 export const IMPACT_DMG_SCALE = 1.7;
 export const MAX_EFFECTIVE_MASS = 9; // 静态物体/超重物体的等效质量上限
+export const PIG_FALL_MIN_IMPACT = 3; // 猪撞静态体（地面/边界）的伤害起始阈值：比全局更低，摔落更易受伤
+export const PIG_FALL_DMG_MULT = 3; // 猪撞静态体的伤害倍率：从一个箱子的高度摔落即致死
 
 // 小鸟飞行结算
 export const SETTLE_SPEED = 0.7; // 速度低于此值视为静止
