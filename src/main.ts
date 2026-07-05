@@ -35,6 +35,14 @@ const game = new Phaser.Game({
   scene: [BootScene, MenuScene, LevelSelectScene, GameScene],
 });
 
+// 通知 index.html 的启动看门狗：游戏已正常启动
+game.events.once(Phaser.Core.Events.READY, () => {
+  const w = window as unknown as { __gameBooted?: boolean; __hideBootWarn?: () => void };
+  w.__gameBooted = true;
+  w.__hideBootWarn?.();
+  console.log('怒鸟出击 v1.1 已启动');
+});
+
 // 手机转屏/浏览器工具栏收起后布局会变，延迟刷新 Scale 以校正画布尺寸与输入坐标
 const refreshScale = () => {
   setTimeout(() => game.scale.refresh(), 120);

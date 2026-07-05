@@ -70,6 +70,29 @@
           display: flex;
         }
       }
+      #ver-badge {
+        position: fixed;
+        left: 6px;
+        bottom: 4px;
+        z-index: 5;
+        font: 12px/1.4 Arial, sans-serif;
+        color: rgba(255, 255, 255, 0.55);
+        pointer-events: none;
+      }
+      #boot-warn {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 99;
+        padding: 10px 14px;
+        background: #c0392b;
+        color: #fff;
+        font: 14px/1.5 'Microsoft YaHei', Arial, sans-serif;
+        word-break: break-all;
+        pointer-events: none;
+      }
     </style>
   </head>
   <body>
@@ -78,6 +101,43 @@
       <div class="phone">📱</div>
       <div style="font-size: 20px">请横屏游玩</div>
     </div>
+    <div id="ver-badge">v1.1</div>
+    <div id="boot-warn"></div>
+    <script>
+      // 启动诊断：脚本加载失败/运行报错/超时未启动时给出可见提示（游戏正常启动后自动隐藏）
+      (function () {
+        var warn = document.getElementById('boot-warn');
+        var shown = 0;
+        function show(msg) {
+          if (shown >= 2) return;
+          shown++;
+          warn.style.display = 'block';
+          warn.textContent += (shown > 1 ? '  |  ' : '') + msg;
+        }
+        window.addEventListener(
+          'error',
+          function (e) {
+            if (e.target && (e.target.src || e.target.href)) {
+              show('资源加载失败: ' + (e.target.src || e.target.href) + ' —— 请清除缓存后强制刷新 (电脑 Ctrl+F5)');
+            } else if (e.message) {
+              show('运行错误: ' + e.message);
+            }
+          },
+          true
+        );
+        window.addEventListener('unhandledrejection', function (e) {
+          show('异常: ' + (e.reason && e.reason.message ? e.reason.message : e.reason));
+        });
+        setTimeout(function () {
+          if (!window.__gameBooted && !shown) {
+            show('游戏未能启动（可能是旧缓存）。请清除浏览器缓存后重试：电脑按 Ctrl+F5，手机在浏览器设置里清除缓存。');
+          }
+        }, 10000);
+        window.__hideBootWarn = function () {
+          warn.style.display = 'none';
+        };
+      })();
+    </script>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
