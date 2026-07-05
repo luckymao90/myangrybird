@@ -1,9 +1,10 @@
 // 验证启动诊断：正常加载无横幅；JS 被拦截(模拟旧缓存404)时 10 秒后出现提示横幅
+// 用法: node scripts/check-diagnostics.mjs [url]
 import { chromium } from 'playwright';
 import { mkdirSync } from 'node:fs';
 
 mkdirSync('shots', { recursive: true });
-const base = 'http://localhost:4173/';
+const base = process.argv[2] ?? 'http://localhost:4173/';
 const browser = await chromium.launch({ channel: 'msedge', headless: true });
 
 // 场景 1：正常加载
